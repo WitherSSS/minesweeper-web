@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#F1F5F9">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>MINESWEEPER PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PWA MANIFEST VIA DATA URI -->
+    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22MINESWEEPER%20PRO%22,%22short_name%22:%22MINESWEEPER%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22#F1F5F9%22,%22theme_color%22:%22#F1F5F9%22}">
     <style>
         body {
             user-select: none;
@@ -103,9 +108,12 @@
 
     <div id="HEADER" class="bg-white border-b border-gray-200 p-1 shadow-sm z-10">
         <div class="max-w-5xl mx-auto flex items-center justify-between gap-1">
-            <button onclick="TOGGLE_SETTINGS()" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded text-[10px] font-bold uppercase">SET</button>
+            <div class="flex gap-1">
+                <button onclick="TOGGLE_SETTINGS()" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded text-[10px] font-bold uppercase">SET</button>
+                <button onclick="TOGGLE_FULLSCREEN()" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded text-[10px] font-bold uppercase">FULL</button>
+            </div>
             
-            <div class="flex-1 flex items-center justify-around bg-gray-50 rounded py-0.5 border border-gray-100">
+            <div class="flex-1 flex items-center justify-around bg-gray-50 rounded py-0.5 border border-gray-100 mx-1">
                 <div class="flex flex-col items-center">
                     <span id="MINE-COUNT" class="text-base font-mono font-bold text-red-600 leading-none">000</span>
                     <span class="text-[7px] text-gray-400 font-black uppercase">MINES</span>
@@ -132,7 +140,7 @@
 
     <div id="SETTINGS-MODAL" class="hidden fixed inset-0 MODAL-OVERLAY flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-xl p-4 w-full max-w-[280px] shadow-2xl">
-            <h2 class="text-xs font-black mb-3 border-b pb-2 text-gray-700 uppercase tracking-widest text-center uppercase">SETTINGS</h2>
+            <h2 class="text-xs font-black mb-3 border-b pb-2 text-gray-700 uppercase tracking-widest text-center">SETTINGS</h2>
             
             <div class="space-y-3">
                 <div class="grid grid-cols-3 gap-1">
@@ -174,6 +182,14 @@
     </div>
 
     <script>
+        // PWA SERVICE WORKER REGISTRATION VIA BLOB
+        if ('serviceWorker' in navigator) {
+            const swCode = `self.addEventListener('fetch', function(e) { /* OFFLINE CACHE MOCK */ });`;
+            const blob = new Blob([swCode], { type: 'text/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(swUrl).catch(() => {});
+        }
+
         function MULBERRY32(A) {
             return function() {
                 var T = A += 0x6D2B79F5;
@@ -370,7 +386,6 @@
                 return;
             }
 
-            // ALWAYS REVEAL ON FIRST CLICK EVEN IF FLAG MODE IS ON
             if (IS_FIRST_CLICK) {
                 IS_FIRST_CLICK = false;
                 PLACE_MINES_BY_SEED(R, C);
@@ -500,6 +515,14 @@
             document.getElementById('INPUT-SEED').value = SEED_STR;
             navigator.clipboard.writeText(SEED_STR).then(() => {
                 SHOW_MSG('SEED COPIED');
+            }).catch(() => {
+                const EL = document.createElement('textarea');
+                EL.value = SEED_STR;
+                document.body.appendChild(EL);
+                EL.select();
+                document.execCommand('copy');
+                document.body.removeChild(EL);
+                SHOW_MSG('SEED COPIED');
             });
         }
 
@@ -524,6 +547,16 @@
                 }
             }
             SHOW_MSG('INVALID SEED');
+        }
+
+        function TOGGLE_FULLSCREEN() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
         }
 
         RESET_BTN.onclick = () => {

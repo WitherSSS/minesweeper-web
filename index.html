@@ -3,32 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#F1F5F9">
+    <meta name="theme-color" id="META-THEME" content="#F1F5F9">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>MINESWEEPER PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PWA MANIFEST VIA DATA URI -->
-    <link rel="manifest" href="data:application/manifest+json,{%22name%22:%22MINESWEEPER%20PRO%22,%22short_name%22:%22MINESWEEPER%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22#F1F5F9%22,%22theme_color%22:%22#F1F5F9%22}">
+    <link rel="manifest" id="MANIFEST">
     <style>
         body {
             user-select: none;
             -webkit-touch-callout: none;
             touch-action: none;
-            background-color: #F1F5F9;
             overflow: hidden;
             height: 100vh;
             display: flex;
             flex-direction: column;
             font-family: ui-sans-serif, system-ui, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
         }
+
+        body.THEME-LIGHT { background-color: #F1F5F9; color: #1E293B; }
+        body.THEME-DARK { background-color: #0F172A; color: #F1F5F9; }
+        
+        body.THEME-DARK #HEADER { background-color: #1E293B !important; border-color: #334155 !important; }
+        body.THEME-DARK .MINE-GRID { background-color: #1E293B; border-color: #1E293B; }
+        body.THEME-DARK .CELL { background-color: #334155; box-shadow: inset 1.5px 1.5px 0px #475569, inset -1.5px -1.5px 0px #0F172A; }
+        body.THEME-DARK .CELL.REVEALED { background-color: #1E293B; border-color: #334155; }
+        body.THEME-DARK .MODAL-CONTENT { background-color: #1E293B !important; color: WHITE; border: 1px solid #334155; }
+        body.THEME-DARK input { background-color: #334155; border-color: #475569; color: WHITE; }
 
         #GAME-CONTAINER {
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 4px;
+            padding: 8px;
             overflow: hidden;
         }
 
@@ -38,7 +47,7 @@
             background-color: #475569;
             border: 1px solid #475569;
             border-radius: 2px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
         }
 
         .CELL {
@@ -48,7 +57,7 @@
             font-weight: 900;
             cursor: pointer;
             background-color: #E2E8F0;
-            box-shadow: inset 1px 1px 0px #F8FAFC, inset -1px -1px 0px #94A3B8;
+            box-shadow: inset 1.5px 1.5px 0px #F8FAFC, inset -1.5px -1.5px 0px #94A3B8;
         }
 
         .CELL.REVEALED {
@@ -58,21 +67,21 @@
         }
 
         .CELL.FLAGGED::after { content: '🚩'; }
-        .CELL.MINE.REVEALED { background-color: #F87171; }
+        .CELL.MINE.REVEALED { background-color: #EF4444 !important; }
         .CELL.MINE.REVEALED::after { content: '💣'; }
 
-        .N-1 { color: #2563EB; } .N-2 { color: #16A34A; }
-        .N-3 { color: #DC2626; } .N-4 { color: #1E3A8A; }
-        .N-5 { color: #7F1D1D; } .N-6 { color: #0891B2; }
+        .N-1 { color: #3B82F6; } .N-2 { color: #10B981; }
+        .N-3 { color: #EF4444; } .N-4 { color: #6366F1; }
+        .N-5 { color: #B91C1C; } .N-6 { color: #0891B2; }
         .N-7 { color: #000000; } .N-8 { color: #64748B; }
 
-        .MODE-ACTIVE {
+        .BTN-ACTIVE {
             background-color: #EF4444 !important;
             color: WHITE !important;
-            border-color: #EF4444 !important;
+            border-color: #DC2626 !important;
         }
 
-        .MODAL-OVERLAY { background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); }
+        .MODAL-OVERLAY { background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
         
         input { 
             text-transform: uppercase; 
@@ -102,35 +111,32 @@
         }
     </style>
 </head>
-<body>
+<body class="THEME-LIGHT">
 
-    <div id="MSG" class="MSG-TOAST uppercase">COPIED</div>
+    <div id="MSG" class="MSG-TOAST">COPIED</div>
 
-    <div id="HEADER" class="bg-white border-b border-gray-200 p-1 shadow-sm z-10">
-        <div class="max-w-5xl mx-auto flex items-center justify-between gap-1">
-            <div class="flex gap-1">
-                <button onclick="TOGGLE_SETTINGS()" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded text-[10px] font-bold uppercase">SET</button>
-                <button onclick="TOGGLE_FULLSCREEN()" class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded text-[10px] font-bold uppercase">FULL</button>
-            </div>
+    <!-- HEADER LAYOUT -->
+    <div id="HEADER" class="bg-white border-b border-gray-200 p-1.5 shadow-sm z-10">
+        <div class="max-w-5xl mx-auto flex items-center justify-between gap-2">
+            <!-- TOP LEFT: FULLSCREEN -->
+            <button onclick="TOGGLE_FULLSCREEN()" class="w-10 h-10 flex items-center justify-center bg-gray-100 dark:bg-slate-700 rounded-lg text-[9px] font-black uppercase shadow-sm">FULL</button>
             
-            <div class="flex-1 flex items-center justify-around bg-gray-50 rounded py-0.5 border border-gray-100 mx-1">
+            <div class="flex-1 flex items-center justify-around bg-gray-50 dark:bg-slate-800 rounded-lg py-1 border border-gray-100 dark:border-slate-700 mx-1">
                 <div class="flex flex-col items-center">
-                    <span id="MINE-COUNT" class="text-base font-mono font-bold text-red-600 leading-none">000</span>
-                    <span class="text-[7px] text-gray-400 font-black uppercase">MINES</span>
+                    <span id="MINE-COUNT" class="text-lg font-mono font-bold text-red-600 leading-none">000</span>
+                    <span class="text-[6px] text-gray-400 font-black uppercase">MINES</span>
                 </div>
                 
-                <button id="RESET-BTN" class="text-xl hover:scale-110 active:scale-90 transition">😊</button>
+                <button id="RESET-BTN" class="text-2xl hover:scale-110 active:scale-90 transition">😊</button>
                 
                 <div class="flex flex-col items-center">
-                    <span id="TIMER" class="text-base font-mono font-bold text-blue-600 leading-none">000</span>
-                    <span class="text-[7px] text-gray-400 font-black uppercase">TIME</span>
+                    <span id="TIMER" class="text-lg font-mono font-bold text-blue-600 leading-none">000</span>
+                    <span class="text-[6px] text-gray-400 font-black uppercase">TIME</span>
                 </div>
             </div>
 
-            <button id="MODE-TOGGLE" onclick="TOGGLE_FLAG_MODE()" class="w-10 h-8 flex flex-col items-center justify-center bg-gray-100 rounded border transition">
-                <span class="text-xs">🚩</span>
-                <span id="MODE-TEXT" class="text-[7px] font-black uppercase">OFF</span>
-            </button>
+            <!-- TOP RIGHT: SETTINGS -->
+            <button onclick="TOGGLE_SETTINGS()" class="w-10 h-10 flex items-center justify-center bg-gray-100 dark:bg-slate-700 rounded-lg text-[9px] font-black uppercase shadow-sm">SET</button>
         </div>
     </div>
 
@@ -138,58 +144,71 @@
         <div id="GRID" class="MINE-GRID"></div>
     </div>
 
+    <!-- SETTINGS MODAL -->
     <div id="SETTINGS-MODAL" class="hidden fixed inset-0 MODAL-OVERLAY flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl p-4 w-full max-w-[280px] shadow-2xl">
-            <h2 class="text-xs font-black mb-3 border-b pb-2 text-gray-700 uppercase tracking-widest text-center">SETTINGS</h2>
+        <div class="MODAL-CONTENT bg-white rounded-2xl p-5 w-full max-w-[300px] shadow-2xl">
+            <h2 class="text-xs font-black mb-4 border-b pb-2 text-gray-400 tracking-widest text-center uppercase">SETTINGS</h2>
             
-            <div class="space-y-3">
+            <div class="space-y-4">
                 <div class="grid grid-cols-3 gap-1">
-                    <button onclick="APPLY_PRESET('EASY')" class="py-2 bg-blue-50 text-blue-700 rounded-lg text-[9px] font-bold border border-blue-100 uppercase">EASY</button>
-                    <button onclick="APPLY_PRESET('MEDIUM')" class="py-2 bg-green-50 text-green-700 rounded-lg text-[9px] font-bold border border-green-100 uppercase">MID</button>
-                    <button onclick="APPLY_PRESET('HARD')" class="py-2 bg-red-600 text-white rounded-lg text-[9px] font-bold shadow-sm uppercase">HARD</button>
+                    <button onclick="APPLY_PRESET('EASY')" class="py-2.5 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-lg text-[9px] font-black border border-blue-100 uppercase">EASY</button>
+                    <button onclick="APPLY_PRESET('MEDIUM')" class="py-2.5 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded-lg text-[9px] font-black border border-green-100 uppercase">MID</button>
+                    <button onclick="APPLY_PRESET('HARD')" class="py-2.5 bg-red-600 text-white rounded-lg text-[9px] font-black shadow-sm uppercase">HARD</button>
                 </div>
                 
-                <div class="grid grid-cols-3 gap-2 text-center border-t pt-3">
+                <div class="grid grid-cols-2 gap-2 border-t pt-4">
+                    <button id="OPT-AUTO" onclick="TOGGLE_AUTO_FLAG()" class="py-2 bg-gray-100 dark:bg-slate-700 rounded text-[9px] font-black uppercase transition">AUTO FLAG: OFF</button>
+                    <button id="OPT-FLAG" onclick="TOGGLE_FLAG_MODE()" class="py-2 bg-gray-100 dark:bg-slate-700 rounded text-[9px] font-black uppercase transition">FLAG MODE: OFF</button>
+                    <button id="OPT-THEME" onclick="CYCLE_THEME()" class="py-2 bg-gray-100 dark:bg-slate-700 rounded text-[9px] font-black uppercase transition">THEME: AUTO</button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 text-center border-t pt-4">
                     <div class="flex flex-col">
-                        <span class="text-[8px] text-gray-400 font-bold mb-1 uppercase">ROWS</span>
-                        <input type="number" id="INPUT-ROWS" class="w-full border border-gray-200 rounded p-1 text-center text-[10px] font-bold uppercase">
+                        <span class="text-[8px] text-gray-400 font-black mb-1 uppercase">ROWS</span>
+                        <input type="number" id="INPUT-ROWS" class="w-full border border-gray-200 rounded p-1 text-center text-[10px] font-bold">
                     </div>
                     <div class="flex flex-col">
-                        <span class="text-[8px] text-gray-400 font-bold mb-1 uppercase">COLS</span>
-                        <input type="number" id="INPUT-COLS" class="w-full border border-gray-200 rounded p-1 text-center text-[10px] font-bold uppercase">
+                        <span class="text-[8px] text-gray-400 font-black mb-1 uppercase">COLS</span>
+                        <input type="number" id="INPUT-COLS" class="w-full border border-gray-200 rounded p-1 text-center text-[10px] font-bold">
                     </div>
                     <div class="flex flex-col">
-                        <span class="text-[8px] text-gray-400 font-bold mb-1 uppercase">MINES</span>
-                        <input type="number" id="INPUT-MINES" class="w-full border border-gray-200 rounded p-1 text-center text-[10px] font-bold uppercase">
+                        <span class="text-[8px] text-gray-400 font-black mb-1 uppercase">MINES</span>
+                        <input type="number" id="INPUT-MINES" class="w-full border border-gray-200 rounded p-1 text-center text-[10px] font-bold">
                     </div>
                 </div>
 
-                <div class="border-t pt-3">
-                    <span class="text-[8px] text-gray-400 font-bold mb-1 block uppercase">GAME SEED</span>
+                <div class="border-t pt-4">
+                    <span class="text-[8px] text-gray-400 font-black mb-1 block uppercase text-center">GAME SEED</span>
                     <div class="flex gap-1">
-                        <input type="text" id="INPUT-SEED" class="flex-1 border border-gray-200 rounded p-1 text-center text-[10px] font-bold uppercase" placeholder="PASTE SEED">
-                        <button onclick="COPY_SEED()" class="bg-gray-100 px-2 rounded text-[8px] font-black uppercase">EXP</button>
-                        <button onclick="LOAD_SEED_CLICK()" class="bg-gray-800 text-white px-2 rounded text-[8px] font-black uppercase">IMP</button>
+                        <input type="text" id="INPUT-SEED" class="flex-1 border border-gray-200 rounded p-1.5 text-center text-[10px] font-bold uppercase" placeholder="PASTE SEED">
+                        <button onclick="COPY_SEED()" class="bg-gray-100 dark:bg-slate-700 px-3 rounded text-[8px] font-black uppercase">EXP</button>
+                        <button onclick="LOAD_SEED_CLICK()" class="bg-gray-800 text-white px-3 rounded text-[8px] font-black uppercase">IMP</button>
                     </div>
                 </div>
 
-                <div class="flex gap-2 pt-2 border-t">
-                    <button onclick="START_GAME_FROM_SETTINGS()" class="flex-1 bg-gray-900 text-white py-2 rounded-lg font-bold text-[10px] uppercase">NEW GAME</button>
-                    <button onclick="TOGGLE_SETTINGS()" class="px-3 bg-gray-100 text-gray-400 rounded-lg text-[10px] font-bold uppercase">CLOSE</button>
+                <div class="flex gap-2 pt-2 border-t pt-4">
+                    <button onclick="START_GAME_FROM_SETTINGS()" class="flex-1 bg-gray-900 dark:bg-slate-100 dark:text-gray-900 text-white py-3 rounded-xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition">START NEW GAME</button>
+                    <button onclick="TOGGLE_SETTINGS()" class="px-4 bg-gray-100 dark:bg-slate-700 text-gray-400 rounded-xl text-[10px] font-black uppercase">CLOSE</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // PWA SERVICE WORKER REGISTRATION VIA BLOB
+        // PWA SETUP
+        const manifest = {
+            name: "MINESWEEPER PRO", short_name: "MINESWEEPER", start_url: ".", display: "standalone",
+            background_color: "#0F172A", theme_color: "#0F172A",
+            icons: [{ src: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzFFMjlNQiIvPjx0ZXh0IHg9IjUwIiB5PSI2MCIgZm9udC1zaXplPSI1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+8J+SojwvdGV4dD48L3N2Zz4=", sizes: "192x192", type: "image/png" }]
+        };
+        document.getElementById('MANIFEST').href = 'data:application/manifest+json;base64,' + btoa(JSON.stringify(manifest));
         if ('serviceWorker' in navigator) {
-            const swCode = `self.addEventListener('fetch', function(e) { /* OFFLINE CACHE MOCK */ });`;
-            const blob = new Blob([swCode], { type: 'text/javascript' });
-            const swUrl = URL.createObjectURL(blob);
-            navigator.serviceWorker.register(swUrl).catch(() => {});
+            const sw = `self.addEventListener('fetch',e=>e.respondWith(fetch(e.request)));`;
+            const blob = new Blob([sw], {type:'text/javascript'});
+            navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
         }
 
+        // PRNG MULBERRY32
         function MULBERRY32(A) {
             return function() {
                 var T = A += 0x6D2B79F5;
@@ -199,15 +218,10 @@
             }
         }
 
-        let CONFIG = { ROWS: 20, COLS: 15, MINES: 40, SEED: 0 };
+        let CONFIG = { ROWS: 20, COLS: 15, MINES: 40, SEED: 0, AUTO_FLAG: false, THEME: 'AUTO' };
         let BOARD = [];
-        let REVEALED_COUNT = 0;
-        let FLAGGED_COUNT = 0;
-        let TIMER_VAL = 0;
-        let TIMER_INTERVAL = null;
-        let IS_GAME_OVER = false;
-        let IS_FIRST_CLICK = true;
-        let IS_FLAG_MODE = false;
+        let REVEALED_COUNT = 0, FLAGGED_COUNT = 0, TIMER_VAL = 0, TIMER_INTERVAL = null;
+        let IS_GAME_OVER = false, IS_FIRST_CLICK = true, IS_FLAG_MODE = false;
 
         const GRID_EL = document.getElementById('GRID');
         const MINE_DISP = document.getElementById('MINE-COUNT');
@@ -215,51 +229,189 @@
         const RESET_BTN = document.getElementById('RESET-BTN');
 
         function INIT() {
+            APPLY_THEME();
             APPLY_PRESET('HARD');
         }
 
-        function SHOW_MSG(TEXT) {
-            const MSG = document.getElementById('MSG');
-            MSG.innerText = TEXT;
-            MSG.style.display = 'block';
-            setTimeout(() => { MSG.style.display = 'none'; }, 2000);
+        function CYCLE_THEME() {
+            const T = ['AUTO', 'LIGHT', 'DARK'];
+            CONFIG.THEME = T[(T.indexOf(CONFIG.THEME) + 1) % 3];
+            APPLY_THEME();
+        }
+
+        function APPLY_THEME() {
+            const BTN = document.getElementById('OPT-THEME');
+            BTN.innerText = `THEME: ${CONFIG.THEME}`;
+            document.body.classList.remove('THEME-LIGHT', 'THEME-DARK');
+            let C = CONFIG.THEME;
+            if (C === 'AUTO') C = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'DARK' : 'LIGHT';
+            document.body.classList.add(`THEME-${C}`);
+            document.getElementById('META-THEME').content = C === 'DARK' ? '#0F172A' : '#F1F5F9';
         }
 
         function APPLY_PRESET(LEVEL) {
-            const CONTAINER = document.getElementById('GAME-CONTAINER');
-            const AW = CONTAINER.clientWidth - 4;
-            const AH = CONTAINER.clientHeight - 4;
+            const AW = document.getElementById('GAME-CONTAINER').clientWidth - 16;
+            const AH = document.getElementById('GAME-CONTAINER').clientHeight - 16;
             const BASE = 22;
+            let MC = Math.floor(AW / BASE), MR = Math.floor(AH / BASE);
             
-            let MC = Math.floor(AW / BASE);
-            let MR = Math.floor(AH / BASE);
-
             if (LEVEL === 'EASY') {
-                CONFIG.COLS = Math.floor(MC * 0.5);
-                CONFIG.ROWS = Math.floor(MR * 0.5);
-                CONFIG.MINES = Math.floor(CONFIG.ROWS * CONFIG.COLS * 0.12);
-            } else if (LEVEL === 'MEDIUM') {
-                CONFIG.COLS = Math.floor(MC * 0.8);
+                // EASY IS NOW WHAT MID WAS (~80% Fill, 15% Mines)
+                CONFIG.COLS = Math.floor(MC * 0.8); 
                 CONFIG.ROWS = Math.floor(MR * 0.8);
-                CONFIG.MINES = Math.floor(CONFIG.ROWS * CONFIG.COLS * 0.16);
-            } else { 
-                if (AH > AW) { 
-                    CONFIG.COLS = 16;
-                    CONFIG.ROWS = Math.max(30, MR);
-                } else { 
-                    CONFIG.ROWS = 16;
-                    CONFIG.COLS = Math.max(30, MC);
-                }
-                CONFIG.MINES = Math.floor(CONFIG.ROWS * CONFIG.COLS * 0.206);
-            }
-
-            CONFIG.SEED = Math.floor(Math.random() * 1000000);
-
-            if (document.getElementById('SETTINGS-MODAL').classList.contains('hidden')) {
-                START_NEW_GAME();
+                CONFIG.MINES = Math.floor(CONFIG.ROWS * CONFIG.COLS * 0.15);
+            } else if (LEVEL === 'MEDIUM') {
+                CONFIG.COLS = Math.floor(MC * 0.9); 
+                CONFIG.ROWS = Math.floor(MR * 0.9);
+                CONFIG.MINES = Math.floor(CONFIG.ROWS * CONFIG.COLS * 0.17);
             } else {
-                SYNC_MODAL_INPUTS();
+                // HARD IS FULL FILL, 20% MINES
+                if (AH > AW) { CONFIG.COLS = 16; CONFIG.ROWS = Math.max(30, MR); }
+                else { CONFIG.ROWS = 16; CONFIG.COLS = Math.max(30, MC); }
+                CONFIG.MINES = Math.floor(CONFIG.ROWS * CONFIG.COLS * 0.20);
             }
+            CONFIG.SEED = Math.floor(Math.random() * 1000000);
+            if (document.getElementById('SETTINGS-MODAL').classList.contains('hidden')) START_NEW_GAME();
+            else SYNC_MODAL_INPUTS();
+        }
+        function START_NEW_GAME() {
+            clearInterval(TIMER_INTERVAL);
+            IS_GAME_OVER = false; IS_FIRST_CLICK = true;
+            TIMER_VAL = 0; REVEALED_COUNT = 0; FLAGGED_COUNT = 0;
+            UPDATE_UI();
+            RESET_BTN.innerText = '😊';
+            BOARD = Array.from({length: CONFIG.ROWS}, (_, r) => Array.from({length: CONFIG.COLS}, (_, c) => ({
+                R: r, C: c, M: false, REV: false, FLG: false, N: 0
+            })));
+            DRAW_BOARD_UI();
+            RESIZE_GRID();
+        }
+
+        function RESIZE_GRID() {
+            const AW = document.getElementById('GAME-CONTAINER').clientWidth - 16;
+            const AH = document.getElementById('GAME-CONTAINER').clientHeight - 16;
+            const SW = Math.floor((AW - 2 - (CONFIG.COLS - 1)) / CONFIG.COLS);
+            const SH = Math.floor((AH - 2 - (CONFIG.ROWS - 1)) / CONFIG.ROWS);
+            let CS = Math.max(8, Math.min(60, Math.min(SW, SH)));
+            document.querySelectorAll('.CELL').forEach(C => {
+                C.style.width = `${CS}px`; C.style.height = `${CS}px`; C.style.fontSize = `${CS * 0.7}px`;
+            });
+            GRID_EL.style.gridTemplateColumns = `repeat(${CONFIG.COLS}, ${CS}px)`;
+        }
+
+        function DRAW_BOARD_UI() {
+            GRID_EL.innerHTML = '';
+            for (let R = 0; R < CONFIG.ROWS; R++) {
+                for (let C = 0; C < CONFIG.COLS; C++) {
+                    const EL = document.createElement('div');
+                    EL.className = 'CELL';
+                    EL.oncontextmenu = (e) => { e.preventDefault(); TOGGLE_FLAG(R, C); };
+                    let ST = 0;
+                    EL.onpointerdown = () => { ST = Date.now(); };
+                    EL.onpointerup = (e) => {
+                        if (e.button === 2) return;
+                        const DUR = Date.now() - ST;
+                        const CELL = BOARD[R][C];
+                        // REVEALED CELLS ALWAYS TRIGGER CHORD REGARDLESS OF MODE
+                        if (CELL.REV) { HANDLE_REVEAL_CLICK(R, C); return; }
+                        
+                        // FIRST CLICK LOGIC
+                        if (IS_FIRST_CLICK) { HANDLE_REVEAL_CLICK(R, C); return; }
+
+                        // UNREVEALED LOGIC
+                        if (IS_FLAG_MODE) {
+                            if (DUR > 300) HANDLE_REVEAL_CLICK(R, C); else TOGGLE_FLAG(R, C);
+                        } else {
+                            if (DUR > 300) TOGGLE_FLAG(R, C); else HANDLE_REVEAL_CLICK(R, C);
+                        }
+                    };
+                    GRID_EL.appendChild(EL);
+                }
+            }
+        }
+
+        function HANDLE_REVEAL_CLICK(R, C) {
+            if (IS_GAME_OVER) return;
+            const CELL = BOARD[R][C];
+            if (CELL.REV) { if (CELL.N > 0) CHORD(R, C); return; }
+            if (IS_FIRST_CLICK) {
+                IS_FIRST_CLICK = false;
+                let PL = 0; const RNG = MULBERRY32(CONFIG.SEED);
+                while (PL < Math.min(CONFIG.MINES, CONFIG.ROWS*CONFIG.COLS-9)) {
+                    let r = Math.floor(RNG() * CONFIG.ROWS), c = Math.floor(RNG() * CONFIG.COLS);
+                    if (!BOARD[r][c].M && (Math.abs(r-R)>1 || Math.abs(c-C)>1)) { BOARD[r][c].M = true; PL++; }
+                }
+                for (let r=0; r<CONFIG.ROWS; r++) for (let c=0; c<CONFIG.COLS; c++)
+                    if (!BOARD[r][c].M) BOARD[r][c].N = GET_NB(r, c).filter(n => n.M).length;
+                START_TIMER(); REVEAL(R, C); PROCESS_AUTO_FLAG(); CHECK_WIN();
+                return;
+            }
+            if (CELL.FLG) return;
+            REVEAL(R, C); PROCESS_AUTO_FLAG(); CHECK_WIN();
+        }
+
+        function REVEAL(R, C) {
+            const CELL = BOARD[R][C]; if (CELL.REV || CELL.FLG) return;
+            CELL.REV = true; REVEALED_COUNT++;
+            const EL = GET_CELL_EL(R, C); EL.classList.add('REVEALED');
+            if (CELL.M) { END_GAME(false); return; }
+            if (CELL.N > 0) { EL.innerText = CELL.N; EL.classList.add(`N-${CELL.N}`); }
+            else GET_NB(R, C).forEach(n => REVEAL(n.R, n.C));
+        }
+
+        function CHORD(R, C) {
+            const NB = GET_NB(R, C);
+            if (NB.filter(n => n.FLG).length === BOARD[R][C].N) {
+                NB.forEach(n => { if (!n.REV && !n.FLG) REVEAL(n.R, n.C); });
+                PROCESS_AUTO_FLAG(); CHECK_WIN();
+            }
+        }
+
+        function PROCESS_AUTO_FLAG() {
+            if (!CONFIG.AUTO_FLAG || IS_GAME_OVER) return;
+            let chg = false;
+            for (let r=0; r<CONFIG.ROWS; r++) for (let c=0; c<CONFIG.COLS; c++) {
+                const CELL = BOARD[r][c];
+                if (CELL.REV && CELL.N > 0) {
+                    const NB = GET_NB(r, c); const HID = NB.filter(n => !n.REV);
+                    if (HID.length === CELL.N) HID.forEach(n => {
+                        if (!n.FLG) { n.FLG = true; FLAGGED_COUNT++; GET_CELL_EL(n.R, n.C).classList.add('FLAGGED'); chg = true; }
+                    });
+                }
+            }
+            if (chg) { UPDATE_UI(); PROCESS_AUTO_FLAG(); }
+        }
+
+        function TOGGLE_FLAG(R, C) {
+            if (IS_GAME_OVER || BOARD[R][C].REV) return;
+            BOARD[R][C].FLG = !BOARD[R][C].FLG;
+            FLAGGED_COUNT += BOARD[R][C].FLG ? 1 : -1;
+            GET_CELL_EL(R, C).classList.toggle('FLAGGED');
+            UPDATE_UI(); PROCESS_AUTO_FLAG();
+        }
+
+        function TOGGLE_FLAG_MODE() {
+            IS_FLAG_MODE = !IS_FLAG_MODE;
+            const B = document.getElementById('OPT-FLAG');
+            B.innerText = `FLAG MODE: ${IS_FLAG_MODE ? 'ON' : 'OFF'}`;
+            B.classList.toggle('BTN-ACTIVE', IS_FLAG_MODE);
+        }
+        function TOGGLE_AUTO_FLAG() {
+            CONFIG.AUTO_FLAG = !CONFIG.AUTO_FLAG;
+            const B = document.getElementById('OPT-AUTO');
+            B.innerText = `AUTO FLAG: ${CONFIG.AUTO_FLAG ? 'ON' : 'OFF'}`;
+            B.classList.toggle('BTN-ACTIVE', CONFIG.AUTO_FLAG);
+            if (CONFIG.AUTO_FLAG) PROCESS_AUTO_FLAG();
+        }
+
+        function END_GAME(WIN) {
+            IS_GAME_OVER = true; clearInterval(TIMER_INTERVAL);
+            RESET_BTN.innerText = WIN ? '😎' : '😵';
+            BOARD.flat().forEach(CELL => {
+                const EL = GET_CELL_EL(CELL.R, CELL.C);
+                if (CELL.M) EL.classList.add('REVEALED', 'MINE');
+                else if (CELL.FLG && !CELL.M) EL.innerText = 'X';
+            });
         }
 
         function SYNC_MODAL_INPUTS() {
@@ -269,304 +421,48 @@
             document.getElementById('INPUT-SEED').value = `${CONFIG.ROWS}-${CONFIG.COLS}-${CONFIG.MINES}-${CONFIG.SEED}`;
         }
 
-        function RESIZE_GRID() {
-            const CONT = document.getElementById('GAME-CONTAINER');
-            const GAP = 1;
-            const BRD = 2;
-            const AW = CONT.clientWidth - 4;
-            const AH = CONT.clientHeight - 4;
-
-            const SW = Math.floor((AW - BRD - (CONFIG.COLS - 1) * GAP) / CONFIG.COLS);
-            const SH = Math.floor((AH - BRD - (CONFIG.ROWS - 1) * GAP) / CONFIG.ROWS);
-            
-            let CS = Math.min(SW, SH);
-            CS = Math.max(8, Math.min(60, CS));
-
-            const CELLS = document.querySelectorAll('.CELL');
-            CELLS.forEach(C => {
-                C.style.width = `${CS}px`;
-                C.style.height = `${CS}px`;
-                C.style.fontSize = `${CS * 0.7}px`;
-            });
-            GRID_EL.style.gridTemplateColumns = `repeat(${CONFIG.COLS}, ${CS}px)`;
-        }
-
-        function START_NEW_GAME() {
-            clearInterval(TIMER_INTERVAL);
-            IS_GAME_OVER = false;
-            IS_FIRST_CLICK = true;
-            TIMER_VAL = 0;
-            REVEALED_COUNT = 0;
-            FLAGGED_COUNT = 0;
-            UPDATE_UI();
-            RESET_BTN.innerText = '😊';
-            GEN_BOARD_DATA();
-            DRAW_BOARD_UI();
-            RESIZE_GRID();
-        }
-
-        function GEN_BOARD_DATA() {
-            BOARD = [];
-            for (let R = 0; R < CONFIG.ROWS; R++) {
-                let ROW = [];
-                for (let C = 0; C < CONFIG.COLS; C++) {
-                    ROW.push({ R, C, M: false, REV: false, FLG: false, N: 0 });
-                }
-                BOARD.push(ROW);
-            }
-        }
-
-        function PLACE_MINES_BY_SEED(EX_R, EX_C) {
-            let PLACED = 0;
-            const TOTAL = CONFIG.ROWS * CONFIG.COLS;
-            const TARGET = Math.min(CONFIG.MINES, TOTAL - 9);
-            const RNG = MULBERRY32(CONFIG.SEED);
-
-            while (PLACED < TARGET) {
-                let R = Math.floor(RNG() * CONFIG.ROWS);
-                let C = Math.floor(RNG() * CONFIG.COLS);
-                if (!BOARD[R][C].M && (Math.abs(R - EX_R) > 1 || Math.abs(C - EX_C) > 1)) {
-                    BOARD[R][C].M = true;
-                    PLACED++;
-                }
-            }
-            for (let R = 0; R < CONFIG.ROWS; R++) {
-                for (let C = 0; C < CONFIG.COLS; C++) {
-                    if (!BOARD[R][C].M) {
-                        BOARD[R][C].N = GET_NB(R, C).filter(NB => NB.M).length;
-                    }
-                }
-            }
-        }
-
         function GET_NB(R, C) {
-            let NB = [];
-            for (let DR = -1; DR <= 1; DR++) {
-                for (let DC = -1; DC <= 1; DC++) {
-                    if (DR === 0 && DC === 0) continue;
-                    let NR = R + DR, NC = C + DC;
-                    if (NR >= 0 && NR < CONFIG.ROWS && NC >= 0 && NC < CONFIG.COLS) {
-                        NB.push(BOARD[NR][NC]);
-                    }
-                }
+            let ns = [];
+            for (let dr=-1; dr<=1; dr++) for (let dc=-1; dc<=1; dc++) {
+                if (dr===0 && dc===0) continue;
+                let nr=R+dr, nc=C+dc;
+                if (nr>=0 && nr<CONFIG.ROWS && nc>=0 && nc<CONFIG.COLS) ns.push(BOARD[nr][nc]);
             }
-            return NB;
+            return ns;
         }
 
-        function DRAW_BOARD_UI() {
-            GRID_EL.innerHTML = '';
-            for (let R = 0; R < CONFIG.ROWS; R++) {
-                for (let C = 0; C < CONFIG.COLS; C++) {
-                    const EL = document.createElement('div');
-                    EL.className = 'CELL';
-                    EL.oncontextmenu = (E) => { E.preventDefault(); TOGGLE_FLAG(R, C); };
-                    
-                    let START_T = 0;
-                    EL.onpointerdown = () => { START_T = Date.now(); };
-                    EL.onpointerup = (E) => {
-                        const DUR = Date.now() - START_T;
-                        if (E.button === 2) return;
-                        if (DUR > 300 && !IS_FLAG_MODE) {
-                            TOGGLE_FLAG(R, C);
-                        } else {
-                            HANDLE_CELL_CLICK(R, C);
-                        }
-                    };
-                    GRID_EL.appendChild(EL);
-                }
-            }
-        }
-
-        function HANDLE_CELL_CLICK(R, C) {
-            if (IS_GAME_OVER) return;
-            const CELL = BOARD[R][C];
-            
-            if (CELL.REV && CELL.N > 0) {
-                CHORD(R, C);
-                return;
-            }
-
-            if (IS_FIRST_CLICK) {
-                IS_FIRST_CLICK = false;
-                PLACE_MINES_BY_SEED(R, C);
-                START_TIMER();
-                REVEAL(R, C);
-                CHECK_WIN();
-                return;
-            }
-
-            if (IS_FLAG_MODE) {
-                TOGGLE_FLAG(R, C);
-                return;
-            }
-
-            if (CELL.FLG || CELL.REV) return;
-            REVEAL(R, C);
-            CHECK_WIN();
-        }
-
-        function REVEAL(R, C) {
-            const CELL = BOARD[R][C];
-            if (CELL.REV || CELL.FLG) return;
-            CELL.REV = true;
-            REVEALED_COUNT++;
-            const EL = GET_CELL_EL(R, C);
-            EL.classList.add('REVEALED');
-            if (CELL.M) {
-                END_GAME(false);
-                return;
-            }
-            if (CELL.N > 0) {
-                EL.innerText = CELL.N;
-                EL.classList.add(`N-${CELL.N}`);
-            } else {
-                GET_NB(R, C).forEach(NB => REVEAL(NB.R, NB.C));
-            }
-        }
-
-        function CHORD(R, C) {
-            const CELL = BOARD[R][C];
-            const NB = GET_NB(R, C);
-            const FLG_COUNT = NB.filter(N => N.FLG).length;
-            if (FLG_COUNT === CELL.N) {
-                NB.forEach(N => { if (!N.REV && !N.FLG) REVEAL(N.R, N.C); });
-                CHECK_WIN();
-            }
-        }
-
-        function TOGGLE_FLAG(R, C) {
-            if (IS_GAME_OVER || BOARD[R][C].REV) return;
-            BOARD[R][C].FLG = !BOARD[R][C].FLG;
-            FLAGGED_COUNT += BOARD[R][C].FLG ? 1 : -1;
-            GET_CELL_EL(R, C).classList.toggle('FLAGGED');
-            UPDATE_UI();
-        }
-
-        function TOGGLE_FLAG_MODE() {
-            IS_FLAG_MODE = !IS_FLAG_MODE;
-            const BTN = document.getElementById('MODE-TOGGLE');
-            BTN.classList.toggle('MODE-ACTIVE', IS_FLAG_MODE);
-            document.getElementById('MODE-TEXT').innerText = IS_FLAG_MODE ? 'ON' : 'OFF';
-        }
-
-        function GET_CELL_EL(R, C) {
-            return GRID_EL.children[R * CONFIG.COLS + C];
-        }
-
-        function START_TIMER() {
-            TIMER_INTERVAL = setInterval(() => {
-                TIMER_VAL = Math.min(TIMER_VAL + 1, 999);
-                UPDATE_UI();
-            }, 1000);
-        }
-
+        function GET_CELL_EL(R, C) { return GRID_EL.children[R * CONFIG.COLS + C]; }
+        function START_TIMER() { TIMER_INTERVAL = setInterval(() => { TIMER_VAL = Math.min(999, TIMER_VAL+1); UPDATE_UI(); }, 1000); }
         function UPDATE_UI() {
             MINE_DISP.innerText = String(Math.max(0, CONFIG.MINES - FLAGGED_COUNT)).padStart(3, '0');
             TIMER_DISP.innerText = String(TIMER_VAL).padStart(3, '0');
         }
-
-        function CHECK_WIN() {
-            if (REVEALED_COUNT === CONFIG.ROWS * CONFIG.COLS - CONFIG.MINES) {
-                END_GAME(true);
-            }
-        }
-
-        function END_GAME(WIN) {
-            IS_GAME_OVER = true;
-            clearInterval(TIMER_INTERVAL);
-            RESET_BTN.innerText = WIN ? '😎' : '😵';
-            for (let R = 0; R < CONFIG.ROWS; R++) {
-                for (let C = 0; C < CONFIG.COLS; C++) {
-                    const EL = GET_CELL_EL(R, C);
-                    if (BOARD[R][C].M) {
-                        EL.classList.add('REVEALED', 'MINE');
-                    } else if (BOARD[R][C].FLG && !BOARD[R][C].M) {
-                        EL.innerText = 'X';
-                        EL.style.fontSize = '8px';
-                    }
-                }
-            }
-        }
-
-        function TOGGLE_SETTINGS() {
-            const MODAL = document.getElementById('SETTINGS-MODAL');
-            MODAL.classList.toggle('hidden');
-            if (!MODAL.classList.contains('hidden')) {
-                SYNC_MODAL_INPUTS();
-            }
-        }
-
+        function CHECK_WIN() { if (REVEALED_COUNT === CONFIG.ROWS * CONFIG.COLS - CONFIG.MINES) END_GAME(true); }
+        function TOGGLE_SETTINGS() { document.getElementById('SETTINGS-MODAL').classList.toggle('hidden'); if (!document.getElementById('SETTINGS-MODAL').classList.contains('hidden')) SYNC_MODAL_INPUTS(); }
+        function TOGGLE_FULLSCREEN() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
         function START_GAME_FROM_SETTINGS() {
-            const R = parseInt(document.getElementById('INPUT-ROWS').value);
-            const C = parseInt(document.getElementById('INPUT-COLS').value);
-            const M = parseInt(document.getElementById('INPUT-MINES').value);
-            if (R >= 5 && C >= 5 && M > 0 && M < R * C) {
-                CONFIG.ROWS = R;
-                CONFIG.COLS = C;
-                CONFIG.MINES = M;
-                CONFIG.SEED = Math.floor(Math.random() * 1000000);
-                TOGGLE_SETTINGS();
-                START_NEW_GAME();
-            }
-        }
-
-        function COPY_SEED() {
-            const SEED_STR = `${CONFIG.ROWS}-${CONFIG.COLS}-${CONFIG.MINES}-${CONFIG.SEED}`;
-            document.getElementById('INPUT-SEED').value = SEED_STR;
-            navigator.clipboard.writeText(SEED_STR).then(() => {
-                SHOW_MSG('SEED COPIED');
-            }).catch(() => {
-                const EL = document.createElement('textarea');
-                EL.value = SEED_STR;
-                document.body.appendChild(EL);
-                EL.select();
-                document.execCommand('copy');
-                document.body.removeChild(EL);
-                SHOW_MSG('SEED COPIED');
-            });
-        }
-
-        function LOAD_SEED_CLICK() {
-            const RAW = document.getElementById('INPUT-SEED').value.trim();
-            const PARTS = RAW.split('-');
-            if (PARTS.length === 4) {
-                const R = parseInt(PARTS[0]);
-                const C = parseInt(PARTS[1]);
-                const M = parseInt(PARTS[2]);
-                const S = parseInt(PARTS[3]);
-                
-                if (!isNaN(R) && !isNaN(C) && !isNaN(M) && !isNaN(S)) {
-                    CONFIG.ROWS = R;
-                    CONFIG.COLS = C;
-                    CONFIG.MINES = M;
-                    CONFIG.SEED = S;
-                    TOGGLE_SETTINGS();
-                    START_NEW_GAME();
-                    SHOW_MSG('SEED LOADED');
-                    return;
-                }
-            }
-            SHOW_MSG('INVALID SEED');
-        }
-
-        function TOGGLE_FULLSCREEN() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(() => {});
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
-            }
-        }
-
-        RESET_BTN.onclick = () => {
+            CONFIG.ROWS = parseInt(document.getElementById('INPUT-ROWS').value);
+            CONFIG.COLS = parseInt(document.getElementById('INPUT-COLS').value);
+            CONFIG.MINES = parseInt(document.getElementById('INPUT-MINES').value);
             CONFIG.SEED = Math.floor(Math.random() * 1000000);
-            START_NEW_GAME();
-        };
+            TOGGLE_SETTINGS(); START_NEW_GAME();
+        }
+        function COPY_SEED() {
+            const S = `${CONFIG.ROWS}-${CONFIG.COLS}-${CONFIG.MINES}-${CONFIG.SEED}`;
+            navigator.clipboard.writeText(S).then(() => SHOW_MSG('COPIED'));
+        }
+        function LOAD_SEED_CLICK() {
+            const P = document.getElementById('INPUT-SEED').value.trim().split('-');
+            if (P.length===4) {
+                CONFIG.ROWS = parseInt(P[0]); CONFIG.COLS = parseInt(P[1]); CONFIG.MINES = parseInt(P[2]); CONFIG.SEED = parseInt(P[3]);
+                TOGGLE_SETTINGS(); START_NEW_GAME(); SHOW_MSG('LOADED');
+            } else SHOW_MSG('ERROR');
+        }
+        function SHOW_MSG(T) { const M = document.getElementById('MSG'); M.innerText = T; M.style.display = 'block'; setTimeout(() => M.style.display = 'none', 1500); }
 
+        RESET_BTN.onclick = () => { CONFIG.SEED = Math.floor(Math.random()*1000000); START_NEW_GAME(); };
         window.onresize = RESIZE_GRID;
         window.onload = INIT;
     </script>
 </body>
 </html>
-

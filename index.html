@@ -2,7 +2,7 @@
 <html lang="EN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" id="META-THEME" content="#F1F5F9">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -10,12 +10,15 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="manifest" id="MANIFEST">
     <style>
+        :root {
+            --sat: env(safe-area-inset-top);
+        }
         body {
             user-select: none;
             -webkit-touch-callout: none;
             touch-action: none;
             overflow: hidden;
-            height: 100vh;
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             font-family: ui-sans-serif, system-ui, sans-serif;
@@ -31,6 +34,10 @@
         body.THEME-DARK .CELL.REVEALED { background-color: #1E293B; border-color: #334155; }
         body.THEME-DARK .MODAL-CONTENT { background-color: #1E293B !important; color: WHITE; border: 1px solid #334155; }
         body.THEME-DARK input { background-color: #334155; border-color: #475569; color: WHITE; }
+
+        #HEADER {
+            padding-top: calc(var(--sat) + 0.375rem);
+        }
 
         #GAME-CONTAINER {
             flex: 1;
@@ -67,8 +74,11 @@
         }
 
         .CELL.FLAGGED::after { content: '🚩'; }
-        .CELL.MINE.REVEALED { background-color: #EF4444 !important; }
-        .CELL.MINE.REVEALED::after { content: '💣'; }
+        
+        /* MINE COLORS FOR END GAME */
+        .CELL.MINE.REVEALED-FAIL { background-color: #EF4444 !important; }
+        .CELL.MINE.REVEALED-WIN { background-color: #10B981 !important; }
+        .CELL.MINE.REVEALED-FAIL::after, .CELL.MINE.REVEALED-WIN::after { content: '💣'; }
 
         .N-1 { color: #3B82F6; } .N-2 { color: #10B981; }
         .N-3 { color: #EF4444; } .N-4 { color: #6366F1; }
@@ -79,6 +89,7 @@
             background-color: #EF4444 !important;
             color: WHITE !important;
             border-color: #DC2626 !important;
+            box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.4);
         }
 
         .MODAL-OVERLAY { background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
@@ -115,10 +126,9 @@
 
     <div id="MSG" class="MSG-TOAST">COPIED</div>
 
-    <!-- HEADER LAYOUT -->
+    <!-- HEADER WITH LAYOUT FIX -->
     <div id="HEADER" class="bg-white border-b border-gray-200 p-1.5 shadow-sm z-10">
         <div class="max-w-5xl mx-auto flex items-center justify-between gap-2">
-            <!-- TOP LEFT: FULLSCREEN -->
             <button onclick="TOGGLE_FULLSCREEN()" class="w-10 h-10 flex items-center justify-center bg-gray-100 dark:bg-slate-700 rounded-lg text-[9px] font-black uppercase shadow-sm">FULL</button>
             
             <div class="flex-1 flex items-center justify-around bg-gray-50 dark:bg-slate-800 rounded-lg py-1 border border-gray-100 dark:border-slate-700 mx-1">
@@ -135,7 +145,6 @@
                 </div>
             </div>
 
-            <!-- TOP RIGHT: SETTINGS -->
             <button onclick="TOGGLE_SETTINGS()" class="w-10 h-10 flex items-center justify-center bg-gray-100 dark:bg-slate-700 rounded-lg text-[9px] font-black uppercase shadow-sm">SET</button>
         </div>
     </div>
@@ -146,48 +155,61 @@
 
     <!-- SETTINGS MODAL -->
     <div id="SETTINGS-MODAL" class="hidden fixed inset-0 MODAL-OVERLAY flex items-center justify-center z-50 p-4">
-        <div class="MODAL-CONTENT bg-white rounded-2xl p-5 w-full max-w-[300px] shadow-2xl">
+        <div class="MODAL-CONTENT bg-white rounded-2xl p-5 w-full max-w-[320px] shadow-2xl">
             <h2 class="text-xs font-black mb-4 border-b pb-2 text-gray-400 tracking-widest text-center uppercase">SETTINGS</h2>
             
             <div class="space-y-4">
+                <!-- DIFFICULTY -->
                 <div class="grid grid-cols-3 gap-1">
-                    <button onclick="APPLY_PRESET('EASY')" class="py-2.5 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-lg text-[9px] font-black border border-blue-100 uppercase">EASY</button>
-                    <button onclick="APPLY_PRESET('MEDIUM')" class="py-2.5 bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 rounded-lg text-[9px] font-black border border-green-100 uppercase">MID</button>
-                    <button onclick="APPLY_PRESET('HARD')" class="py-2.5 bg-red-600 text-white rounded-lg text-[9px] font-black shadow-sm uppercase">HARD</button>
+                    <button id="PRESET-EASY" onclick="APPLY_PRESET('EASY')" class="py-2.5 bg-gray-100 text-blue-700 dark:bg-slate-800 dark:text-blue-300 rounded-lg text-[9px] font-black border border-transparent uppercase transition">EASY</button>
+                    <button id="PRESET-MEDIUM" onclick="APPLY_PRESET('MEDIUM')" class="py-2.5 bg-gray-100 text-green-700 dark:bg-slate-800 dark:text-green-300 rounded-lg text-[9px] font-black border border-transparent uppercase transition">MID</button>
+                    <button id="PRESET-HARD" onclick="APPLY_PRESET('HARD')" class="py-2.5 bg-gray-100 text-red-700 dark:bg-slate-800 dark:text-red-300 rounded-lg text-[9px] font-black border border-transparent uppercase transition">HARD</button>
                 </div>
                 
-                <div class="grid grid-cols-2 gap-2 border-t pt-4">
-                    <button id="OPT-AUTO" onclick="TOGGLE_AUTO_FLAG()" class="py-2 bg-gray-100 dark:bg-slate-700 rounded text-[9px] font-black uppercase transition">AUTO FLAG: OFF</button>
-                    <button id="OPT-FLAG" onclick="TOGGLE_FLAG_MODE()" class="py-2 bg-gray-100 dark:bg-slate-700 rounded text-[9px] font-black uppercase transition">FLAG MODE: OFF</button>
-                    <button id="OPT-THEME" onclick="CYCLE_THEME()" class="py-2 bg-gray-100 dark:bg-slate-700 rounded text-[9px] font-black uppercase transition">THEME: AUTO</button>
+                <!-- TOGGLES -->
+                <div class="grid grid-cols-3 gap-2 border-t pt-4">
+                    <button id="OPT-AUTO" onclick="TOGGLE_AUTO_FLAG()" class="flex flex-col items-center justify-center py-2 bg-gray-100 dark:bg-slate-700 rounded-lg transition border border-transparent">
+                        <span class="text-base mb-1">🤖</span>
+                        <span id="AUTO-TEXT" class="text-[7px] font-black uppercase">OFF</span>
+                    </button>
+                    <button id="OPT-FLAG" onclick="TOGGLE_FLAG_MODE()" class="flex flex-col items-center justify-center py-2 bg-gray-100 dark:bg-slate-700 rounded-lg transition border border-transparent">
+                        <span class="text-base mb-1">🚩</span>
+                        <span id="FLAG-TEXT" class="text-[7px] font-black uppercase">ON</span>
+                    </button>
+                    <button id="OPT-THEME" onclick="CYCLE_THEME()" class="flex flex-col items-center justify-center py-2 bg-gray-100 dark:bg-slate-700 rounded-lg transition border border-transparent">
+                        <span class="text-base mb-1">🌓</span>
+                        <span id="THEME-TEXT" class="text-[7px] font-black uppercase">AUTO</span>
+                    </button>
                 </div>
 
+                <!-- CUSTOM -->
                 <div class="grid grid-cols-3 gap-2 text-center border-t pt-4">
                     <div class="flex flex-col">
                         <span class="text-[8px] text-gray-400 font-black mb-1 uppercase">ROWS</span>
-                        <input type="number" id="INPUT-ROWS" class="w-full border border-gray-200 rounded p-1 text-center text-[10px] font-bold">
+                        <input type="number" id="INPUT-ROWS" class="w-full border border-gray-200 dark:border-slate-600 rounded p-1 text-center text-[10px] font-bold">
                     </div>
                     <div class="flex flex-col">
                         <span class="text-[8px] text-gray-400 font-black mb-1 uppercase">COLS</span>
-                        <input type="number" id="INPUT-COLS" class="w-full border border-gray-200 rounded p-1 text-center text-[10px] font-bold">
+                        <input type="number" id="INPUT-COLS" class="w-full border border-gray-200 dark:border-slate-600 rounded p-1 text-center text-[10px] font-bold">
                     </div>
                     <div class="flex flex-col">
                         <span class="text-[8px] text-gray-400 font-black mb-1 uppercase">MINES</span>
-                        <input type="number" id="INPUT-MINES" class="w-full border border-gray-200 rounded p-1 text-center text-[10px] font-bold">
+                        <input type="number" id="INPUT-MINES" class="w-full border border-gray-200 dark:border-slate-600 rounded p-1 text-center text-[10px] font-bold">
                     </div>
                 </div>
 
+                <!-- SEED -->
                 <div class="border-t pt-4">
                     <span class="text-[8px] text-gray-400 font-black mb-1 block uppercase text-center">GAME SEED</span>
                     <div class="flex gap-1">
-                        <input type="text" id="INPUT-SEED" class="flex-1 border border-gray-200 rounded p-1.5 text-center text-[10px] font-bold uppercase" placeholder="PASTE SEED">
+                        <input type="text" id="INPUT-SEED" class="flex-1 border border-gray-200 dark:border-slate-600 rounded p-1.5 text-center text-[10px] font-bold uppercase" placeholder="SEED">
                         <button onclick="COPY_SEED()" class="bg-gray-100 dark:bg-slate-700 px-3 rounded text-[8px] font-black uppercase">EXP</button>
                         <button onclick="LOAD_SEED_CLICK()" class="bg-gray-800 text-white px-3 rounded text-[8px] font-black uppercase">IMP</button>
                     </div>
                 </div>
-
-                <div class="flex gap-2 pt-2 border-t pt-4">
-                    <button onclick="START_GAME_FROM_SETTINGS()" class="flex-1 bg-gray-900 dark:bg-slate-100 dark:text-gray-900 text-white py-3 rounded-xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition">START NEW GAME</button>
+                <!-- START -->
+                <div class="flex gap-2 border-t pt-4">
+                    <button onclick="START_GAME_FROM_SETTINGS()" class="flex-1 bg-gray-900 dark:bg-slate-100 dark:text-gray-900 text-white py-3 rounded-xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition">START GAME</button>
                     <button onclick="TOGGLE_SETTINGS()" class="px-4 bg-gray-100 dark:bg-slate-700 text-gray-400 rounded-xl text-[10px] font-black uppercase">CLOSE</button>
                 </div>
             </div>
@@ -195,7 +217,7 @@
     </div>
 
     <script>
-        // PWA SETUP
+        // PWA
         const manifest = {
             name: "MINESWEEPER PRO", short_name: "MINESWEEPER", start_url: ".", display: "standalone",
             background_color: "#0F172A", theme_color: "#0F172A",
@@ -208,7 +230,7 @@
             navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
         }
 
-        // PRNG MULBERRY32
+        // PRNG
         function MULBERRY32(A) {
             return function() {
                 var T = A += 0x6D2B79F5;
@@ -218,10 +240,13 @@
             }
         }
 
-        let CONFIG = { ROWS: 20, COLS: 15, MINES: 40, SEED: 0, AUTO_FLAG: false, THEME: 'AUTO' };
+        let CONFIG = { 
+            ROWS: 20, COLS: 15, MINES: 40, SEED: 0, 
+            AUTO_FLAG: false, THEME: 'AUTO', ACTIVE_LEVEL: 'HARD'
+        };
         let BOARD = [];
         let REVEALED_COUNT = 0, FLAGGED_COUNT = 0, TIMER_VAL = 0, TIMER_INTERVAL = null;
-        let IS_GAME_OVER = false, IS_FIRST_CLICK = true, IS_FLAG_MODE = false;
+        let IS_GAME_OVER = false, IS_FIRST_CLICK = true, IS_FLAG_MODE = true;
 
         const GRID_EL = document.getElementById('GRID');
         const MINE_DISP = document.getElementById('MINE-COUNT');
@@ -231,6 +256,7 @@
         function INIT() {
             APPLY_THEME();
             APPLY_PRESET('HARD');
+            UPDATE_TOGGLE_UI();
         }
 
         function CYCLE_THEME() {
@@ -240,8 +266,8 @@
         }
 
         function APPLY_THEME() {
-            const BTN = document.getElementById('OPT-THEME');
-            BTN.innerText = `THEME: ${CONFIG.THEME}`;
+            const TXT = document.getElementById('THEME-TEXT');
+            TXT.innerText = CONFIG.THEME;
             document.body.classList.remove('THEME-LIGHT', 'THEME-DARK');
             let C = CONFIG.THEME;
             if (C === 'AUTO') C = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'DARK' : 'LIGHT';
@@ -254,9 +280,9 @@
             const AH = document.getElementById('GAME-CONTAINER').clientHeight - 16;
             const BASE = 22;
             let MC = Math.floor(AW / BASE), MR = Math.floor(AH / BASE);
-            
+            CONFIG.ACTIVE_LEVEL = LEVEL;
+
             if (LEVEL === 'EASY') {
-                // EASY IS NOW WHAT MID WAS (~80% Fill, 15% Mines)
                 CONFIG.COLS = Math.floor(MC * 0.8); 
                 CONFIG.ROWS = Math.floor(MR * 0.8);
                 CONFIG.MINES = Math.floor(CONFIG.ROWS * CONFIG.COLS * 0.15);
@@ -265,15 +291,15 @@
                 CONFIG.ROWS = Math.floor(MR * 0.9);
                 CONFIG.MINES = Math.floor(CONFIG.ROWS * CONFIG.COLS * 0.17);
             } else {
-                // HARD IS FULL FILL, 20% MINES
                 if (AH > AW) { CONFIG.COLS = 16; CONFIG.ROWS = Math.max(30, MR); }
                 else { CONFIG.ROWS = 16; CONFIG.COLS = Math.max(30, MC); }
                 CONFIG.MINES = Math.floor(CONFIG.ROWS * CONFIG.COLS * 0.20);
             }
             CONFIG.SEED = Math.floor(Math.random() * 1000000);
+            SYNC_MODAL_INPUTS();
             if (document.getElementById('SETTINGS-MODAL').classList.contains('hidden')) START_NEW_GAME();
-            else SYNC_MODAL_INPUTS();
         }
+
         function START_NEW_GAME() {
             clearInterval(TIMER_INTERVAL);
             IS_GAME_OVER = false; IS_FIRST_CLICK = true;
@@ -312,13 +338,8 @@
                         if (e.button === 2) return;
                         const DUR = Date.now() - ST;
                         const CELL = BOARD[R][C];
-                        // REVEALED CELLS ALWAYS TRIGGER CHORD REGARDLESS OF MODE
                         if (CELL.REV) { HANDLE_REVEAL_CLICK(R, C); return; }
-                        
-                        // FIRST CLICK LOGIC
                         if (IS_FIRST_CLICK) { HANDLE_REVEAL_CLICK(R, C); return; }
-
-                        // UNREVEALED LOGIC
                         if (IS_FLAG_MODE) {
                             if (DUR > 300) HANDLE_REVEAL_CLICK(R, C); else TOGGLE_FLAG(R, C);
                         } else {
@@ -373,7 +394,7 @@
             for (let r=0; r<CONFIG.ROWS; r++) for (let c=0; c<CONFIG.COLS; c++) {
                 const CELL = BOARD[r][c];
                 if (CELL.REV && CELL.N > 0) {
-                    const NB = GET_NB(r, c); const HID = NB.filter(n => !n.REV);
+                    const HID = GET_NB(r, c).filter(n => !n.REV);
                     if (HID.length === CELL.N) HID.forEach(n => {
                         if (!n.FLG) { n.FLG = true; FLAGGED_COUNT++; GET_CELL_EL(n.R, n.C).classList.add('FLAGGED'); chg = true; }
                     });
@@ -390,27 +411,30 @@
             UPDATE_UI(); PROCESS_AUTO_FLAG();
         }
 
-        function TOGGLE_FLAG_MODE() {
-            IS_FLAG_MODE = !IS_FLAG_MODE;
-            const B = document.getElementById('OPT-FLAG');
-            B.innerText = `FLAG MODE: ${IS_FLAG_MODE ? 'ON' : 'OFF'}`;
-            B.classList.toggle('BTN-ACTIVE', IS_FLAG_MODE);
+        function UPDATE_TOGGLE_UI() {
+            document.getElementById('OPT-AUTO').classList.toggle('BTN-ACTIVE', CONFIG.AUTO_FLAG);
+            document.getElementById('AUTO-TEXT').innerText = `AUTO: ${CONFIG.AUTO_FLAG ? 'ON' : 'OFF'}`;
+            document.getElementById('OPT-FLAG').classList.toggle('BTN-ACTIVE', IS_FLAG_MODE);
+            document.getElementById('FLAG-TEXT').innerText = `FLAG: ${IS_FLAG_MODE ? 'ON' : 'OFF'}`;
+            
+            ['EASY', 'MEDIUM', 'HARD'].forEach(lvl => {
+                document.getElementById(`PRESET-${lvl}`).classList.toggle('BTN-ACTIVE', CONFIG.ACTIVE_LEVEL === lvl);
+            });
         }
-        function TOGGLE_AUTO_FLAG() {
-            CONFIG.AUTO_FLAG = !CONFIG.AUTO_FLAG;
-            const B = document.getElementById('OPT-AUTO');
-            B.innerText = `AUTO FLAG: ${CONFIG.AUTO_FLAG ? 'ON' : 'OFF'}`;
-            B.classList.toggle('BTN-ACTIVE', CONFIG.AUTO_FLAG);
-            if (CONFIG.AUTO_FLAG) PROCESS_AUTO_FLAG();
-        }
+
+        function TOGGLE_FLAG_MODE() { IS_FLAG_MODE = !IS_FLAG_MODE; UPDATE_TOGGLE_UI(); }
+        function TOGGLE_AUTO_FLAG() { CONFIG.AUTO_FLAG = !CONFIG.AUTO_FLAG; UPDATE_TOGGLE_UI(); if (CONFIG.AUTO_FLAG) PROCESS_AUTO_FLAG(); }
 
         function END_GAME(WIN) {
             IS_GAME_OVER = true; clearInterval(TIMER_INTERVAL);
             RESET_BTN.innerText = WIN ? '😎' : '😵';
             BOARD.flat().forEach(CELL => {
                 const EL = GET_CELL_EL(CELL.R, CELL.C);
-                if (CELL.M) EL.classList.add('REVEALED', 'MINE');
-                else if (CELL.FLG && !CELL.M) EL.innerText = 'X';
+                if (CELL.M) {
+                    EL.classList.add('REVEALED', 'MINE', WIN ? 'REVEALED-WIN' : 'REVEALED-FAIL');
+                } else if (CELL.FLG && !CELL.M) {
+                    EL.innerText = 'X';
+                }
             });
         }
 
@@ -419,6 +443,7 @@
             document.getElementById('INPUT-COLS').value = CONFIG.COLS;
             document.getElementById('INPUT-MINES').value = CONFIG.MINES;
             document.getElementById('INPUT-SEED').value = `${CONFIG.ROWS}-${CONFIG.COLS}-${CONFIG.MINES}-${CONFIG.SEED}`;
+            UPDATE_TOGGLE_UI();
         }
 
         function GET_NB(R, C) {
@@ -440,11 +465,13 @@
         function CHECK_WIN() { if (REVEALED_COUNT === CONFIG.ROWS * CONFIG.COLS - CONFIG.MINES) END_GAME(true); }
         function TOGGLE_SETTINGS() { document.getElementById('SETTINGS-MODAL').classList.toggle('hidden'); if (!document.getElementById('SETTINGS-MODAL').classList.contains('hidden')) SYNC_MODAL_INPUTS(); }
         function TOGGLE_FULLSCREEN() { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+        
         function START_GAME_FROM_SETTINGS() {
             CONFIG.ROWS = parseInt(document.getElementById('INPUT-ROWS').value);
             CONFIG.COLS = parseInt(document.getElementById('INPUT-COLS').value);
             CONFIG.MINES = parseInt(document.getElementById('INPUT-MINES').value);
             CONFIG.SEED = Math.floor(Math.random() * 1000000);
+            CONFIG.ACTIVE_LEVEL = 'CUSTOM';
             TOGGLE_SETTINGS(); START_NEW_GAME();
         }
         function COPY_SEED() {
@@ -455,7 +482,7 @@
             const P = document.getElementById('INPUT-SEED').value.trim().split('-');
             if (P.length===4) {
                 CONFIG.ROWS = parseInt(P[0]); CONFIG.COLS = parseInt(P[1]); CONFIG.MINES = parseInt(P[2]); CONFIG.SEED = parseInt(P[3]);
-                TOGGLE_SETTINGS(); START_NEW_GAME(); SHOW_MSG('LOADED');
+                CONFIG.ACTIVE_LEVEL = 'SEED'; TOGGLE_SETTINGS(); START_NEW_GAME(); SHOW_MSG('LOADED');
             } else SHOW_MSG('ERROR');
         }
         function SHOW_MSG(T) { const M = document.getElementById('MSG'); M.innerText = T; M.style.display = 'block'; setTimeout(() => M.style.display = 'none', 1500); }
